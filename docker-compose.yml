@@ -1,0 +1,60 @@
+networks:
+  csnetwork: {}
+
+
+services:
+  cs.donationworker.api:
+    image: ${DOCKER_REGISTRY-}cs-donationworker-app:v1
+    build:
+      context: .
+      dockerfile: src/DonationWorker/Dockerfile
+    container_name: cs-donationworker-api
+    ports:
+      - 5004:8080
+    # depends_on:
+    #   cs.campanhas.db:
+    #     condition: service_healthy
+    #   cs.redis:
+    #     condition: service_started
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+
+      #ConnectionStrings
+      ConnectionStrings__Database: "Host=cs-campanhas-db;Port=5432;Database=cs-campanhas;Username=fiap;Password=fiap123"
+      ConnectionStrings__AuditLog: "http://cs-dynamo-db:8000"
+      ConnectionStrings__Redis: "cs-redis:6379"
+      ConnectionStrings__ElasticSearch: "http://cs-elasticsearch:9200"
+
+      #RabbitMq
+      RabbitMq__Host: "cs-rabbitmq"
+      RabbitMq__Username: "fiap"
+      RabbitMq__Password: "fiap123"
+
+      #Queues
+      DONATION_CREATED_QUEUE: "donation-created-queue"
+
+      #JWT
+      Jwt__SecretKey: "ChaveSuperSecretaComMaisDe32CaracteresAqui12345"
+      Jwt__Issuer: "ES-ConexaoSolidariaIssuer"
+      Jwt__Audience: "ES-ConexaoSolidariaClient"
+      Jwt__ExpirationHours: "3"
+      AES__KEY: "W36tuZgAwZTkvGebRMEQJjGtbLNJRK6unGj1Ow5Rnm8="
+
+      # Cache TTL
+      Cache__CampanhaAtivaTTLSeconds: "60"
+      Cache__CampanhaNaoAtivaTTLSeconds: "86400"
+
+      #Logs
+      CustomLogging__LogInfo: "True"
+      CustomLogging__LogError: "True"
+      CustomLogging__LogWarning: "True"
+      CustomLogging__SendLogToDB: "True"
+
+      #Configuration
+      Application__Type: "LOCAL"
+      Admin__Email: "admin@conexao-solidaria.com.br"
+      Admin__Password: "12345678Aa#"
+    networks: 
+      - csnetwork
+    restart: on-failure

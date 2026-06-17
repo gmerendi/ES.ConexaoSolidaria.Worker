@@ -32,7 +32,7 @@ services:
       RabbitMq__Password: "fiap123"
 
       #Queues
-      DONATION_CREATED_QUEUE: "donation-created-queue"
+      QUEUES__DONATION_CREATED_QUEUE: "donation-created-queue"
 
       #JWT
       Jwt__SecretKey: "ChaveSuperSecretaComMaisDe32CaracteresAqui12345"

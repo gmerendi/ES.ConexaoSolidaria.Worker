@@ -3,7 +3,9 @@
   <Folder Name="/src/">
     <Project Path="src/DonationWorker/DonationWorker.csproj" />
   </Folder>
-  <Folder Name="/tests/" />
+  <Folder Name="/tests/">
+    <Project Path="tests/DonationWorker.Tests/DonationWorker.Tests.csproj" Id="58d604f2-f59a-47c3-86cf-b809a01a7701" />
+  </Folder>
   <Project Path="docker-compose.dcproj">
     <Build />
   </Project>

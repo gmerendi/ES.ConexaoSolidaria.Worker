@@ -15,22 +15,18 @@ namespace DonationWorker.Infrastructure.Extensions
 
             services.AddMassTransit(x =>
             {
-                logger.LogInformation(" ***************************************** 1");
+
                 // Consumers
                 x.AddConsumer<DonationCreatedEventConsumer>();
-                logger.LogInformation(" ***************************************** 2");
                 x.AddDelayedMessageScheduler();
 
                 var host = configuration["RabbitMq:Host"];
                 var user = configuration["RabbitMq:Username"];
                 var pass = configuration["RabbitMq:Password"];
                 var donation_created_queue = configuration["QUEUES:DONATION_CREATED_QUEUE"];
-                logger.LogInformation(" ***** Queue: " + donation_created_queue);
-                logger.LogInformation(" ***************************************** 4");
 
                 x.UsingRabbitMq((context, cfg) =>
                 {
-                    logger.LogInformation(" ***************************************** 3");
                     // Mantém na memória do app se o Rabbit cair
                     cfg.UseInMemoryOutbox();
 

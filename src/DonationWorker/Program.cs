@@ -3,7 +3,7 @@ using DonationWorker.Infrastructure.Extensions;
 
 var builder = Host.CreateApplicationBuilder(args);
 var logCounter = 0;
-var logTotal = 7;
+var logTotal = 1;
 
 // ──────────────────────────────────────────────────────────────────────────────
 // ── Configuration
@@ -19,13 +19,14 @@ using var loggerFactory = LoggerFactory.Create(logging => {
     logging.AddSimpleConsole();
 });
 var logger = loggerFactory.CreateLogger("Program");
-logger.LogInformation(" ***** ({0}/{1}) - Inicializando Worker doacoes ", logCounter++, logTotal);
+logger.LogInformation(" ***** Inicializando Worker doacoes ");
+logCounter++;
 
 
 // ──────────────────────────────────────────────────────────────────────────────
 // ── Infrastructure Extensions
 // ──────────────────────────────────────────────────────────────────────────────
-logger.LogInformation(" ***** ({0}/{1}) - Inicio inicialização de Infrastructure Extensions ", logCounter++, logTotal);
+logger.LogInformation(" ***** ({0}/{1}) - Inicio inicialização de Infrastructure Extensions ", logCounter, logTotal);
 builder.Services.AddDbContext(builder.Configuration, logger);
 builder.Services.AddCustomLogging(logger);
 builder.Services.AddRepositories(logger);
@@ -33,7 +34,7 @@ builder.Services.AddAuditLog(builder.Configuration, logger);
 builder.Services.AddMessaging(builder.Configuration, logger);
 builder.Services.AddAuthenticationServices(builder.Configuration, logger);
 builder.Services.AddMetricsServices(logger);
-logger.LogInformation(" ***** ({0}/{1}) - Termino inicialização de Infrastructure Extensions ", logCounter, logTotal);
+logger.LogInformation(" ***** ({0}/{1}) - Termino inicialização de Infrastructure Extensions ", logCounter++, logTotal);
 
 
 

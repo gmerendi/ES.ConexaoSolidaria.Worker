@@ -11,11 +11,6 @@ services:
     container_name: cs-donationworker-api
     ports:
       - 5004:8080
-    # depends_on:
-    #   cs.campanhas.db:
-    #     condition: service_healthy
-    #   cs.redis:
-    #     condition: service_started
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080

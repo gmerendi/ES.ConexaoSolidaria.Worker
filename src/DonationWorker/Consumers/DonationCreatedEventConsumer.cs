@@ -45,7 +45,7 @@ public class DonationCreatedEventConsumer : IConsumer<DonationCreatedEvent>
         try
         {
             // Processar pagamento
-            _logger.LogInformation("Processando doacao.", BaseLogType.EVENT, donationEvent);
+            _logger.LogInformation("Processando doacao do usuario " + donationEvent.guidUser + " para campanha: " + donationEvent.tituloCampanha, BaseLogType.EVENT, donationEvent);
 
             // 1. Checa se camapanha existe
             var campanha = await _campanhaRepository.ObterPorGuidAsync(donationEvent.guidCampanha);

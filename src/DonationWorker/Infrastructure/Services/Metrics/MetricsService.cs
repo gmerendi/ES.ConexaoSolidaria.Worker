@@ -28,6 +28,19 @@ public class MetricsService : IMetricsService
             LabelNames = new[] { "method", "route", "status_code" }
         });
 
+    // ── Histograma de latência de processamento de mensagens (RabbitMQ) ───────
+
+    private static readonly Histogram _duracaoProcessamentoMensagem = Prometheus.Metrics.CreateHistogram(
+        "rabbitmq_message_processing_duration_seconds",
+        "Duração do processamento de mensagens consumidas do RabbitMQ, em segundos.",
+        new HistogramConfiguration
+        {
+            // Buckets mais largos que o HTTP: processamento envolve I/O de banco
+            // (transação com 2 escritas) + decrypt + chamada de publish no broker.
+            Buckets = new[] { 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 1.0, 2.5, 5.0, 10.0 },
+            LabelNames = new[] { "event", "success" }
+        });
+
     // ── Implementação da interface ────────────────────────────────────────────
 
     public void IncrementarDoacao() => _doacaoCounter.Inc();
@@ -36,4 +49,9 @@ public class MetricsService : IMetricsService
         => _duracaoRequisicao
                .WithLabels(metodo, rota, statusCode.ToString())
                .Observe(duracaoSegundos);
+
+    public void RegistrarDuracaoProcessamentoMensagem(string evento, bool sucesso, double duracaoSegundos)
+       => _duracaoProcessamentoMensagem
+              .WithLabels(evento, sucesso.ToString())
+              .Observe(duracaoSegundos);
 }

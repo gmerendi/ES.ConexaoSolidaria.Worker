@@ -1,7 +1,8 @@
 using DonationWorker;
 using DonationWorker.Infrastructure.Extensions;
+using Prometheus;
 
-var builder = Host.CreateApplicationBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 var logCounter = 0;
 var logTotal = 1;
 
@@ -37,13 +38,18 @@ builder.Services.AddMetricsServices(logger);
 logger.LogInformation(" ***** ({0}/{1}) - Termino inicialização de Infrastructure Extensions ", logCounter++, logTotal);
 
 
-
 builder.Services.AddHostedService<Worker>();
 
-var host = builder.Build();
+var app = builder.Build();
 
-host.Run();
+// ──────────────────────────────────────────────────────────────────────────────
+// ── Health Check
+// ──────────────────────────────────────────────────────────────────────────────
+app.MapMetrics("/metrics");
+app.MapGet("/health", () => Results.Ok("Healthy"));
 
+
+app.Run();
 
 
 

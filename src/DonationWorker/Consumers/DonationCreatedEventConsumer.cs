@@ -7,6 +7,7 @@ using DonationWorker.Domain.Enums;
 using DonationWorker.Domain.Shared.Interfaces;
 using DonationWorker.Domain.ValueObjects;
 using MassTransit;
+using System.Diagnostics;
 
 /// <summary>
 /// Consumer responsável por processar eventos de pedidos realizados
@@ -19,10 +20,12 @@ public class DonationCreatedEventConsumer : IConsumer<DonationCreatedEvent>
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMessageService _messageService;
     private readonly ICryptoService _cryptoService;
+    private readonly IMetricsService _metrics;
 
     public DonationCreatedEventConsumer(IDoacaoRepository doacaoRepository,
         ICampanhaRepository campanhaRepository, IBaseLogger<DonationCreatedEventConsumer> logger,
-        IUnitOfWork unitOfWork, IMessageService messageService, ICryptoService cryptoService)
+        IUnitOfWork unitOfWork, IMessageService messageService, ICryptoService cryptoService,
+        IMetricsService metrics)
     {
         _doacaoRepository = doacaoRepository;
         _campanhaRepository = campanhaRepository;
@@ -30,6 +33,7 @@ public class DonationCreatedEventConsumer : IConsumer<DonationCreatedEvent>
         _unitOfWork = unitOfWork;
         _messageService = messageService;
         _cryptoService = cryptoService;
+        _metrics = metrics;
     }
 
     /// <summary>
@@ -37,6 +41,8 @@ public class DonationCreatedEventConsumer : IConsumer<DonationCreatedEvent>
     /// </summary>
     public async Task Consume(ConsumeContext<DonationCreatedEvent> context)
     {
+        var sw = Stopwatch.StartNew();
+        var sucesso = false;
         var donationEvent = context.Message;
 
         _logger.LogInformation("Evento recebido: DonationCreatedEvent", BaseLogType.EVENT, donationEvent, donationEvent.correlationId);
@@ -112,7 +118,11 @@ public class DonationCreatedEventConsumer : IConsumer<DonationCreatedEvent>
                    donationEvent.correlationId,
                    context.CancellationToken               
                 );
-        
+
+            // ── Métrica de negócio ─────────────────────────────────────────
+            _metrics.IncrementarDoacao();
+            sucesso = true;
+
             _logger.LogInformation("Evento publicado: DonationProcessedEvent.",BaseLogType.EVENT, donationEvent);
 
         }
@@ -123,6 +133,12 @@ public class DonationCreatedEventConsumer : IConsumer<DonationCreatedEvent>
             
             // Lançar exceção para que o MassTransit tente reprocessar a mensagem
             throw;
+        }
+        finally
+        {
+            sw.Stop();
+            _metrics.RegistrarDuracaoProcessamentoMensagem(
+                nameof(DonationCreatedEvent), sucesso, sw.Elapsed.TotalSeconds);
         }
     }
 }

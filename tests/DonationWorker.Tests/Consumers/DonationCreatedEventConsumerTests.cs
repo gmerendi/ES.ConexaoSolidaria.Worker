@@ -21,6 +21,7 @@ public class DonationCreatedEventConsumerTests
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<IMessageService> _messageServiceMock = new();
     private readonly Mock<ICryptoService> _cryptoServiceMock = new();
+    private readonly Mock<IMetricsService> _metricsServiceMock = new();
 
     private DonationCreatedEventConsumer CriarConsumer() => new(
         _doacaoRepositoryMock.Object,
@@ -28,7 +29,9 @@ public class DonationCreatedEventConsumerTests
         _loggerMock.Object,
         _unitOfWorkMock.Object,
         _messageServiceMock.Object,
-        _cryptoServiceMock.Object);
+        _cryptoServiceMock.Object,
+        _metricsServiceMock.Object
+        );
 
     /// <summary>
     /// Cria um DonationCreatedEvent valido. O campo "cpf" carrega o valor "criptografado"

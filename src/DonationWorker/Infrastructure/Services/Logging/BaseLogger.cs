@@ -74,7 +74,7 @@ namespace DonationWorker.Infrastructure.Services.Logging
 
         private void SendToDynamoDb(string logLevel, BaseLogType type, string message, object? data, string correlationId)
         {
-            if (_configuration["CustomLogging:SendLogToDB"] != "True") return;
+            if (type != BaseLogType.EVENT && _configuration["CustomLogging:SendLogToDB"] != "True") return;
 
             try
             {

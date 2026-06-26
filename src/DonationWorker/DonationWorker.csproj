@@ -13,8 +13,10 @@
 		<PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.11" />
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
-		<PackageReference Include="AWSSDK.DynamoDBv2" Version="4.0.19" />
-		<PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="4.0.4.3" />
+		<PackageReference Include="AWSSDK.SQS" Version="3.7.400.51" />
+		<PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.401" />
+		<PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="3.7.400.1" />
+		<PackageReference Include="MassTransit.AmazonSQS" Version="8.0.0" />
 		<PackageReference Include="MassTransit" Version="8.0.0" />
 		<PackageReference Include="MassTransit.RabbitMQ" Version="8.0.0" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" />
@@ -51,4 +53,5 @@
 			<LastGenOutput>Errors.Designer.cs</LastGenOutput>
 		</EmbeddedResource>
 	</ItemGroup>
+
 </Project>

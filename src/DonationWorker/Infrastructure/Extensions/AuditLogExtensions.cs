@@ -1,4 +1,5 @@
 ﻿using Amazon.DynamoDBv2;
+using DonationWorker.Domain.Shared.Interfaces;
 using DonationWorker.Infrastructure.Services.AuditLog;
 using DonationWorker.Infrastructure.Services.UserContext;
 
@@ -8,11 +9,19 @@ namespace DonationWorker.Infrastructure.Extensions
     {
         public static IServiceCollection AddAuditLog(this IServiceCollection services, IConfiguration configuration, ILogger logger)
         {
-            
+
 
             // Audit Logs
             var dynamoDbConn = Environment.GetEnvironmentVariable("ConnectionStrings__AuditLog");
             var applicationType = Environment.GetEnvironmentVariable("Application__Type");
+
+            var accessKey = Environment.GetEnvironmentVariable("AWS_ACCESS_KEY_ID");
+            var secretKey = Environment.GetEnvironmentVariable("AWS_SECRET_ACCESS_KEY");
+            var sessionToken = Environment.GetEnvironmentVariable("AWS_SESSION_TOKEN");
+            var region = Environment.GetEnvironmentVariable("AWS_REGION") ?? "us-east-1";
+            var dynamoDbUrl = Environment.GetEnvironmentVariable("DYNAMODB_SERVICE_URL");
+
+
             if (applicationType == "LOCAL")
             {
                 // LOCAL: Usa URL do container e chaves 'local'
@@ -20,11 +29,11 @@ namespace DonationWorker.Infrastructure.Extensions
                 var config = new AmazonDynamoDBConfig { ServiceURL = dynamoDbConn };
                 services.AddSingleton<IAmazonDynamoDB>(new AmazonDynamoDBClient(credentials, config));
             }
-            else
+            else if (applicationType == "LAB")
             {
-                // EKS/AWS: DEIXE O SDK GERENCIAR TUDO
-                // Isso fará o SDK ler o Token injetado pela Service Account automaticamente
-                services.AddAWSService<IAmazonDynamoDB>();
+                var credentials = new Amazon.Runtime.SessionAWSCredentials(accessKey, secretKey, sessionToken);
+                var config = new AmazonDynamoDBConfig { ServiceURL = dynamoDbUrl };
+                services.AddSingleton<IAmazonDynamoDB>(new AmazonDynamoDBClient(credentials, config));
             }
             logger.LogInformation(" ***** DynamoDb inicializado.");
 

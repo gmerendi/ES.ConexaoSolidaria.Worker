@@ -1,4 +1,5 @@
-﻿using CS.Domain.Events;
+﻿using Amazon.SQS;
+using CS.Domain.Events;
 using DonationWorker.Domain.Enums;
 using DonationWorker.Domain.Shared.Interfaces;
 using DonationWorker.Infrastructure.Services.Messaging;
@@ -14,6 +15,7 @@ public class MessageServiceTests
 {
     private readonly Mock<IPublishEndpoint> _publishEndpointMock = new();
     private readonly Mock<IBaseLogger<MessageService>> _loggerMock = new();
+    private readonly Mock<IAmazonSQS> _sqsClientMock = new();
     private readonly Mock<ICorrelationIdGenerator> _correlationIdGeneratorMock = new();
 
     private MessageService CriarServico()
@@ -23,7 +25,8 @@ public class MessageServiceTests
             _publishEndpointMock.Object,
             configuration,
             _loggerMock.Object,
-            _correlationIdGeneratorMock.Object);
+            _correlationIdGeneratorMock.Object,
+            _sqsClientMock.Object);
     }
 
     [Fact]
@@ -134,3 +137,5 @@ public class MessageServiceTests
             BaseLogType.EVENT, It.IsAny<object?>(), It.IsAny<string?>()), Times.Once);
     }
 }
+
+

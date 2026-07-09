@@ -20,7 +20,12 @@ public class MessageServiceTests
 
     private MessageService CriarServico()
     {
-        var configuration = new ConfigurationBuilder().Build();
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                { "Application__Type", "LOCAL" }
+            })
+            .Build();
         return new MessageService(
             _publishEndpointMock.Object,
             configuration,
@@ -137,5 +142,6 @@ public class MessageServiceTests
             BaseLogType.EVENT, It.IsAny<object?>(), It.IsAny<string?>()), Times.Once);
     }
 }
+
 
 

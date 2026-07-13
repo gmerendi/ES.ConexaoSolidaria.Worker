@@ -146,7 +146,7 @@ public class DonationCreatedEventConsumerTests
 
         _loggerMock.Verify(l => l.LogInformation(
             It.Is<string>(msg => msg.Contains("Evento publicado")),
-            BaseLogType.EVENT, It.IsAny<object?>(), null), Times.Once);
+            BaseLogType.EVENT, It.IsAny<object?>(), evento.correlationId), Times.Once);
 
         _loggerMock.Verify(l => l.LogError(It.IsAny<string>(), It.IsAny<BaseLogType>(), It.IsAny<object?>(), It.IsAny<string?>()), Times.Never);
     }
@@ -201,8 +201,8 @@ public class DonationCreatedEventConsumerTests
 
         // Assert
         _loggerMock.Verify(l => l.LogError(
-            It.Is<string>(msg => msg.Contains(evento.correlationId!)),
-            BaseLogType.EVENT, It.IsAny<object?>(), It.IsAny<string?>()), Times.Once);
+            It.IsAny<string>(),
+            BaseLogType.EVENT, It.IsAny<Exception>(), It.IsAny<object?>(), evento.correlationId), Times.Once);
     }
 
     // -----------------------------------------------------------------------------

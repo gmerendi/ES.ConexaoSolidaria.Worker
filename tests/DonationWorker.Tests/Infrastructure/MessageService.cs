@@ -15,6 +15,7 @@ public class MessageServiceTests
 {
     private readonly Mock<IPublishEndpoint> _publishEndpointMock = new();
     private readonly Mock<IBaseLogger<MessageService>> _loggerMock = new();
+    private readonly Mock<IAmazonSQS> _sqsClientMock = new();
     private readonly Mock<ICorrelationIdGenerator> _correlationIdGeneratorMock = new();
     private readonly Mock<IAmazonSQS> _sqsClientMock = new();
 
@@ -23,10 +24,9 @@ public class MessageServiceTests
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["Application__Type"] = "LOCAL"
+                { "Application__Type", "LOCAL" }
             })
             .Build();
-
         return new MessageService(
             _publishEndpointMock.Object,
             configuration,
@@ -147,3 +147,6 @@ public class MessageServiceTests
             It.IsAny<string?>()), Times.Once);
     }
 }
+
+
+

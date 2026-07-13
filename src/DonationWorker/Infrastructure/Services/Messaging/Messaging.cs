@@ -66,11 +66,11 @@ namespace DonationWorker.Infrastructure.Services.Messaging
             {
                 var eventMessage = new DonationProcessedEvent(guidUser, nome, email, guidCampanha, tituloCampanha, valor, (correlationId ?? _correlationIdGenerator.Get()));
                 await _publish.Publish(eventMessage, ct);
-                _logger.LogInformation("Evento DonationProcessedEvent publicado para o Broker. Email: " + email, BaseLogType.EVENT, eventMessage);
+                _logger.LogInformation("Evento DonationProcessedEvent publicado para o Broker. Usuario: {Email} | Campanha: {GuidCampanha}", BaseLogType.EVENT, new { Email = email, GuidCampanha = guidCampanha });
             }
             catch (Exception ex)
             {
-                _logger.LogError("Erro ao publicar evento DonationProcessedEvent para o Broker : " + email, BaseLogType.EVENT, ex);
+                _logger.LogError("Erro ao publicar evento DonationProcessedEvent para o Broker. Usuario: {Email} | Campanha: {GuidCampanha}", BaseLogType.EVENT, new { Email = email, GuidCampanha = guidCampanha });
                 throw;
             }
 
@@ -82,7 +82,7 @@ namespace DonationWorker.Infrastructure.Services.Messaging
 
         private async Task SendDonationProcessedEventMessageSQS(Guid guidUser, string nome, string email, Guid guidCampanha, string tituloCampanha, decimal valor, string correlationId, CancellationToken ct)
         {
-            _logger.LogInformation("Evento DonationProcessedEvent iniciado para a fila: " + _donationProcessedQueueUrl, BaseLogType.EVENT, null);
+            _logger.LogInformation("Evento DonationProcessedEvent iniciado para a fila: {Fila}", BaseLogType.EVENT, new { Fila = _donationProcessedQueueUrl });
             var message = new
             {
                 guidUser = guidUser.ToString(),
@@ -102,11 +102,11 @@ namespace DonationWorker.Infrastructure.Services.Messaging
                     QueueUrl = _donationProcessedQueueUrl,
                     MessageBody = messageBody
                 });
-                _logger.LogInformation("Evento DonationProcessedEvent publicado para o SQS. Email: " + email, BaseLogType.EVENT, message);
+                _logger.LogInformation("Evento DonationProcessedEvent publicado para o SQS. Usuario: {Email} | Campanha: {GuidCampanha}", BaseLogType.EVENT, new { Email = email, GuidCampanha = guidCampanha });
             }
             catch (Exception ex)
             {
-                _logger.LogError("Erro ao publicar evento DonationProcessedEvent para o SQS : " + email, BaseLogType.EVENT, ex);
+                _logger.LogError("Erro ao publicar evento DonationProcessedEvent para o SQS. Usuario: {Email} | Campanha: {GuidCampanha}", BaseLogType.EVENT, new { Email = email, GuidCampanha = guidCampanha });
                 throw;
             }
 

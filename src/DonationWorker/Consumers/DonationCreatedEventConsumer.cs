@@ -51,7 +51,7 @@ public class DonationCreatedEventConsumer : IConsumer<DonationCreatedEvent>
         try
         {
             // Processar pagamento
-            _logger.LogInformation("Processando doacao do usuario " + donationEvent.guidUser + " para campanha: " + donationEvent.tituloCampanha, BaseLogType.EVENT, donationEvent);
+            _logger.LogInformation("Processando doacao do usuario {guidUser} para campanha: {tituloCampanha}", BaseLogType.EVENT, donationEvent, donationEvent.correlationId);
 
             // 1. Checa se camapanha existe
             var campanha = await _campanhaRepository.ObterPorGuidAsync(donationEvent.guidCampanha);
@@ -62,9 +62,9 @@ public class DonationCreatedEventConsumer : IConsumer<DonationCreatedEvent>
             }
 
             // 2. Checa se valor é  >0
-            if (donationEvent.valor <= 0) 
+            if (donationEvent.valor <= 0)
             {
-                throw new ApplicationException($"Valor de doacao deve ser maior que 0");
+                throw new ApplicationException("Valor de doacao deve ser maior que 0");
             }
 
             // 3. Checa se a doacao ja nao foi processada
@@ -82,13 +82,13 @@ public class DonationCreatedEventConsumer : IConsumer<DonationCreatedEvent>
             var titulo = TituloCampanha.Create(donationEvent.tituloCampanha);
             var cpf = Cpf.Create(decryptedCpf);
             var doacao = new Doacao(
-                donationEvent.guidUser, 
-                donationEvent.nome, 
-                email, 
-                cpf, 
-                donationEvent.guidCampanha, 
-                titulo, 
-                donationEvent.valor, 
+                donationEvent.guidUser,
+                donationEvent.nome,
+                email,
+                cpf,
+                donationEvent.guidCampanha,
+                titulo,
+                donationEvent.valor,
                 donationEvent.correlationId);
 
             // 4. Grava a doacao
@@ -116,21 +116,20 @@ public class DonationCreatedEventConsumer : IConsumer<DonationCreatedEvent>
                    donationEvent.tituloCampanha,
                    donationEvent.valor,
                    donationEvent.correlationId,
-                   context.CancellationToken               
+                   context.CancellationToken
                 );
 
             // ── Métrica de negócio ─────────────────────────────────────────
             _metrics.IncrementarDoacao();
             sucesso = true;
 
-            _logger.LogInformation("Evento publicado: DonationProcessedEvent.",BaseLogType.EVENT, donationEvent);
+            _logger.LogInformation("Evento publicado: DonationProcessedEvent.", BaseLogType.EVENT, donationEvent, donationEvent.correlationId);
 
         }
         catch (Exception ex)
         {
-            _logger.LogError("Erro ao processar doacao com correlationId: " + donationEvent.correlationId,
-                BaseLogType.EVENT, ex);
-            
+            _logger.LogError("Erro ao processar doacao com correlationId: {correlationId}", BaseLogType.EVENT, ex, donationEvent, donationEvent.correlationId);
+
             // Lançar exceção para que o MassTransit tente reprocessar a mensagem
             throw;
         }

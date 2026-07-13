@@ -1,12 +1,27 @@
-# See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
-
-# This stage is used when running from VS in fast mode (Default for Debug configuration)
+# --------------------------------------------------------------------------------------------------
+# STAGE: BASE (Execução/Runtime)
+# Onde a aplicação irá rodar.
+# --------------------------------------------------------------------------------------------------
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-USER $APP_UID
-WORKDIR /app
+
+# Cria um grupo e um usuário não-root (FIAP) com um ID específico (ex: 1000)
+# Usar um UID/GID fixo ajuda na gestão de permissões de volumes.
+ARG APP_USER=FIAP
+ARG APP_UID=1000
+RUN groupadd -r $APP_USER -g $APP_UID && \
+    useradd -r -g $APP_USER -u $APP_UID -s /sbin/nologin -c "Docker User" $APP_USER
+
+WORKDIR /
+
+# Define o usuário não-root para execução.
+USER $APP_USER 
 
 
-# This stage is used to build the service project
+
+# --------------------------------------------------------------------------------------------------
+# STAGE: BUILD
+# Usa o SDK para compilar. 
+# --------------------------------------------------------------------------------------------------
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
@@ -16,12 +31,21 @@ COPY . .
 WORKDIR "/src/src/DonationWorker"
 RUN dotnet build "./DonationWorker.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
-# This stage is used to publish the service project to be copied to the final stage
+
+
+# --------------------------------------------------------------------------------------------------
+# STAGE: PUBLISH
+# --------------------------------------------------------------------------------------------------
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
 RUN dotnet publish "./DonationWorker.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
-# This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
+
+
+# --------------------------------------------------------------------------------------------------
+# STAGE: FINAL (Produção)
+# Copia os binários e garante que o usuário FIAP tem as permissões corretas
+# --------------------------------------------------------------------------------------------------
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .

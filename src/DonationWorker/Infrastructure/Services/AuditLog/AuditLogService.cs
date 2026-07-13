@@ -19,7 +19,9 @@ namespace DonationWorker.Infrastructure.Services.AuditLog
         {
             try
             {
-                _logger.LogInformation($"Preparando audit log para entidade " + entityType + " com Guid " + entityId + " - Operação: " + operation + " feito por: " + user, BaseLogType.LOG, data);
+                _logger.LogInformation("Preparando audit log: {EntityType} {EntityId} {Operation} {User}", BaseLogType.LOG,
+                    new { EntityType = entityType, EntityId = entityId, Operation = operation, User = user });
+
                 var entry = new AuditLog
                 {
                     PK = $"ENTITY#{entityType.ToUpper()}#{entityId}",
@@ -32,14 +34,16 @@ namespace DonationWorker.Infrastructure.Services.AuditLog
                     // Define expiração para 1 ano (exemplo)
                     ExpirationTime = DateTimeOffset.UtcNow.AddYears(1).ToUnixTimeSeconds()
                 };
-                _logger.LogInformation($"Salvando audit log para entidade " + entityType + " com Guid " + entityId + " - Operação: " + operation + " feito por: " + user, BaseLogType.LOG, entry);
+
+                _logger.LogInformation("Salvando audit log: {EntityType} {EntityId} {Operation} {User}", BaseLogType.LOG,
+                    new { EntityType = entityType, EntityId = entityId, Operation = operation, User = user });
 
                 await _context.SaveAsync(entry);
 
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Erro preparando audit log para entidade " + entityType + " com Guid " + entityId + ": " + ex.Message, BaseLogType.LOG, ex);
+                _logger.LogError("Erro ao salvar audit log: {EntityType} {EntityId}", BaseLogType.LOG, ex, new { EntityType = entityType, EntityId = entityId });
                 throw;
             }
         }
@@ -48,12 +52,14 @@ namespace DonationWorker.Infrastructure.Services.AuditLog
         {
             try
             {
-                _logger.LogInformation($"Salvando raw audit log para o ResourceId: " + log.ResourceId + " - Operação: " + log.Operation + " feito por: " + log.ChangedBy, BaseLogType.LOG, log);
+                _logger.LogInformation("Salvando raw audit log: {ResourceId} {Operation} {User}", BaseLogType.LOG,
+                    new { ResourceId = log.ResourceId, Operation = log.Operation, User = log.ChangedBy });
+
                 await _context.SaveAsync(log);
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Erro preparando raw audit log para o ResourceId: {log.ResourceId}: {ex.Message}", BaseLogType.LOG, ex);
+                _logger.LogError("Erro ao salvar raw audit log: {ResourceId}", BaseLogType.LOG, ex, new { ResourceId = log.ResourceId });
                 throw;
             }
         }

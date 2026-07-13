@@ -3,9 +3,7 @@ using Amazon.SQS.Model;
 using CS.Domain.Events;
 using DonationWorker.Domain.Enums;
 using DonationWorker.Domain.Shared.Interfaces;
-using DonationWorker.Domain.ValueObjects;
 using MassTransit;
-using Microsoft.IdentityModel.Tokens;
 using System.Text.Json;
 
 namespace DonationWorker.Infrastructure.Services.Messaging

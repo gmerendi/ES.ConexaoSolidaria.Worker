@@ -1,4 +1,4 @@
-﻿namespace DonnationWorker.Infrastructure.Services.Extensions
+﻿namespace DonationWorker.Infrastructure.Services.Extensions
 {
     public static class DiagnosticExtensions
     {

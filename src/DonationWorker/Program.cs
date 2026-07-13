@@ -55,10 +55,7 @@ app.MapGet("/health", () => Results.Ok("Healthy"));
 // ──────────────────────────────────────────────────────────────────────────────
 logger.LogInformation(" ***** ({0}/{1}) - Inicio inicialização de Middlewares ", logCounter, logTotal);
 app.UseExceptionMiddleware();
-app.UseAuthentication();
-app.UseAuthorization();
 app.UseMetricsMiddleware();
-app.MapControllers();
 logger.LogInformation(" ***** ({0}/{1}) - Termino inicialização de Middlewares ", logCounter++, logTotal);
 
 

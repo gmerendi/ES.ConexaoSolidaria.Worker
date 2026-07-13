@@ -17,7 +17,6 @@ public class MessageServiceTests
     private readonly Mock<IBaseLogger<MessageService>> _loggerMock = new();
     private readonly Mock<IAmazonSQS> _sqsClientMock = new();
     private readonly Mock<ICorrelationIdGenerator> _correlationIdGeneratorMock = new();
-    private readonly Mock<IAmazonSQS> _sqsClientMock = new();
 
     private MessageService CriarServico()
     {

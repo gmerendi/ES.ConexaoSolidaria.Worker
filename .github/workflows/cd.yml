@@ -12,7 +12,7 @@ env:
   K8S_NAMESPACE: default
   DEPLOYMENT_NAME: cs-donationworker-api
   MANIFEST_FILE: k8s/aws/services/cs-donationworker.yaml
-  DOCKERFILE_PATH: src/DonationWorker.Api/Dockerfile
+  DOCKERFILE_PATH: src/DonationWorker/Dockerfile
 
 permissions:
   contents: read

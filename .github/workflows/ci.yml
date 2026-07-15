@@ -70,7 +70,7 @@ jobs:
       
       - name: Build da imagem Docker local
         run: |
-          docker build -t ${{ env.IMAGE_NAME }} -f src/DonationWorker.Api/Dockerfile .
+          docker build -t ${{ env.IMAGE_NAME }} -f src/DonationWorker/Dockerfile .
 
       # 3. TESTE VULNERABILIDADES ------------------------------------------------------------------
       - name: Escaneamento de vulnerabilidades (Trivy)

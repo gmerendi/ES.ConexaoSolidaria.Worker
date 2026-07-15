@@ -10,7 +10,7 @@ env:
   ECR_REPOSITORY: cs-donationworker-api
   EKS_CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}
   K8S_NAMESPACE: default
-  DEPLOYMENT_NAME: cs-donationworker-api
+  DEPLOYMENT_NAME: cs-donationworker        # <--- CORRIGIDO: Removido o "-api" para corresponder ao metadata.name do YAML
   MANIFEST_FILE: k8s/aws/services/cs-donationworker.yaml
   DOCKERFILE_PATH: src/DonationWorker/Dockerfile
 
@@ -112,6 +112,7 @@ jobs:
         env:
           IMAGE: ${{ steps.build-image.outputs.image }}
         run: |
+          # Atualiza o container "cs-donationworker" dentro do deployment "cs-donationworker"
           kubectl set image deployment/${{ env.DEPLOYMENT_NAME }} \
             ${{ env.DEPLOYMENT_NAME }}=$IMAGE \
             -n ${{ env.K8S_NAMESPACE }}

@@ -46,7 +46,7 @@ public class MessageServiceTests
         // Act
         await servico.SendDonationProcessedEventMessage(
             guidUser, "Joao da Silva", "joao@exemplo.com", guidCampanha,
-            "Campanha de inverno", 150m, correlationId, CancellationToken.None);
+            "Campanha de inverno", 150m, DoacaoStatus.APROVADA.ToString(), correlationId, CancellationToken.None);
 
         // Assert
         _publishEndpointMock.Verify(p => p.Publish(
@@ -72,7 +72,7 @@ public class MessageServiceTests
         // Act
         await servico.SendDonationProcessedEventMessage(
             Guid.NewGuid(), "Joao da Silva", "joao@exemplo.com", Guid.NewGuid(),
-            "Campanha de inverno", 100m, "correlation-id", token);
+            "Campanha de inverno", 100m, DoacaoStatus.APROVADA.ToString(), "correlation-id", token);
 
         // Assert
         _publishEndpointMock.Verify(p => p.Publish(It.IsAny<DonationProcessedEvent>(), token), Times.Once);
@@ -90,7 +90,7 @@ public class MessageServiceTests
         // Act
         await servico.SendDonationProcessedEventMessage(
             Guid.NewGuid(), "Joao da Silva", "joao@exemplo.com", Guid.NewGuid(),
-            "Campanha de inverno", 100m, null!, CancellationToken.None);
+            "Campanha de inverno", 100m, DoacaoStatus.APROVADA.ToString(), null!, CancellationToken.None);
 
         // Assert
         _publishEndpointMock.Verify(p => p.Publish(
@@ -108,7 +108,7 @@ public class MessageServiceTests
         // Act
         await servico.SendDonationProcessedEventMessage(
             Guid.NewGuid(), "Joao da Silva", "joao@exemplo.com", Guid.NewGuid(),
-            "Campanha de inverno", 100m, "correlation-id", CancellationToken.None);
+            "Campanha de inverno", 100m, DoacaoStatus.APROVADA.ToString(), "correlation-id", CancellationToken.None);
 
         // Assert
         _loggerMock.Verify(l => l.LogInformation(
@@ -133,7 +133,7 @@ public class MessageServiceTests
         // Act
         var act = async () => await servico.SendDonationProcessedEventMessage(
             Guid.NewGuid(), "Joao da Silva", "joao@exemplo.com", Guid.NewGuid(),
-            "Campanha de inverno", 100m, "correlation-id", CancellationToken.None);
+            "Campanha de inverno", 100m, DoacaoStatus.APROVADA.ToString(), "correlation-id", CancellationToken.None);
 
         // Assert
         var assertion = await act.Should().ThrowAsync<InvalidOperationException>();
@@ -146,6 +146,3 @@ public class MessageServiceTests
             It.IsAny<string?>()), Times.Once);
     }
 }
-
-
-

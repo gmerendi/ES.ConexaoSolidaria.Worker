@@ -1,4 +1,5 @@
 ﻿using DonationWorker.Domain.Entities.Doacoes;
+using DonationWorker.Domain.Enums;
 using DonationWorker.Domain.Shared.Exceptions;
 using DonationWorker.Domain.ValueObjects;
 using DonationWorker.Tests.Common;
@@ -10,7 +11,7 @@ namespace DonationWorker.Tests.Domain.Entities;
 public class DoacaoTests
 {
     private static (Guid guidUsuario, string nome, Email email, Cpf cpf, Guid guidCampanha,
-        TituloCampanha titulo, decimal valor, string correlationId) DadosValidos()
+        TituloCampanha titulo, decimal valor, string correlationId, DoacaoStatus status) DadosValidos()
     {
         return (
             Guid.NewGuid(),
@@ -20,17 +21,18 @@ public class DoacaoTests
             Guid.NewGuid(),
             TestData.CriarTituloValido(),
             100m,
-            Guid.NewGuid().ToString());
+            Guid.NewGuid().ToString(),
+            DoacaoStatus.PROCESSANDO);
     }
 
     [Fact]
     public void Construtor_ComDadosValidos_DeveCriarDoacaoComPropriedadesCorretas()
     {
         // Arrange
-        var (guidUsuario, nome, email, cpf, guidCampanha, titulo, valor, correlationId) = DadosValidos();
+        var (guidUsuario, nome, email, cpf, guidCampanha, titulo, valor, correlationId, status) = DadosValidos();
 
         // Act
-        var doacao = new Doacao(guidUsuario, nome, email, cpf, guidCampanha, titulo, valor, correlationId);
+        var doacao = new Doacao(guidUsuario, nome, email, cpf, guidCampanha, titulo, valor, correlationId, status);
 
         // Assert
         doacao.GuidUsuario.Should().Be(guidUsuario);
@@ -41,6 +43,7 @@ public class DoacaoTests
         doacao.TituloCampanha.Should().Be(titulo);
         doacao.ValorDoacao.Should().Be(valor);
         doacao.CorrelationId.Should().Be(correlationId);
+        doacao.StatusDoacao.Should().Be(status);
         doacao.CriadoPor.Should().Be("Worker");
     }
 
@@ -51,10 +54,10 @@ public class DoacaoTests
     public void Construtor_ComNomeNuloOuVazio_DeveLancarDomainException(string? nomeInvalido)
     {
         // Arrange
-        var (guidUsuario, _, email, cpf, guidCampanha, titulo, valor, correlationId) = DadosValidos();
+        var (guidUsuario, _, email, cpf, guidCampanha, titulo, valor, correlationId, status) = DadosValidos();
 
         // Act
-        var act = () => new Doacao(guidUsuario, nomeInvalido!, email, cpf, guidCampanha, titulo, valor, correlationId);
+        var act = () => new Doacao(guidUsuario, nomeInvalido!, email, cpf, guidCampanha, titulo, valor, correlationId, status);
 
         // Assert
         act.Should().Throw<DomainException>()
@@ -67,10 +70,10 @@ public class DoacaoTests
     public void Construtor_ComNomeMenorQueTamanhoMinimo_DeveLancarDomainException(string nomeCurto)
     {
         // Arrange
-        var (guidUsuario, _, email, cpf, guidCampanha, titulo, valor, correlationId) = DadosValidos();
+        var (guidUsuario, _, email, cpf, guidCampanha, titulo, valor, correlationId, status) = DadosValidos();
 
         // Act
-        var act = () => new Doacao(guidUsuario, nomeCurto, email, cpf, guidCampanha, titulo, valor, correlationId);
+        var act = () => new Doacao(guidUsuario, nomeCurto, email, cpf, guidCampanha, titulo, valor, correlationId, status);
 
         // Assert
         act.Should().Throw<DomainException>()
@@ -81,11 +84,11 @@ public class DoacaoTests
     public void Construtor_ComNomeMaiorQue200Caracteres_DeveLancarDomainException()
     {
         // Arrange
-        var (guidUsuario, _, email, cpf, guidCampanha, titulo, valor, correlationId) = DadosValidos();
+        var (guidUsuario, _, email, cpf, guidCampanha, titulo, valor, correlationId, status) = DadosValidos();
         var nomeLongo = new string('a', 201);
 
         // Act
-        var act = () => new Doacao(guidUsuario, nomeLongo, email, cpf, guidCampanha, titulo, valor, correlationId);
+        var act = () => new Doacao(guidUsuario, nomeLongo, email, cpf, guidCampanha, titulo, valor, correlationId, status);
 
         // Assert
         act.Should().Throw<DomainException>()
@@ -96,10 +99,10 @@ public class DoacaoTests
     public void Construtor_ComEmailNulo_DeveLancarDomainException()
     {
         // Arrange
-        var (guidUsuario, nome, _, cpf, guidCampanha, titulo, valor, correlationId) = DadosValidos();
+        var (guidUsuario, nome, _, cpf, guidCampanha, titulo, valor, correlationId, status) = DadosValidos();
 
         // Act
-        var act = () => new Doacao(guidUsuario, nome, null!, cpf, guidCampanha, titulo, valor, correlationId);
+        var act = () => new Doacao(guidUsuario, nome, null!, cpf, guidCampanha, titulo, valor, correlationId, status);
 
         // Assert
         act.Should().Throw<DomainException>()
@@ -110,10 +113,10 @@ public class DoacaoTests
     public void Construtor_ComCpfNulo_DeveLancarDomainException()
     {
         // Arrange
-        var (guidUsuario, nome, email, _, guidCampanha, titulo, valor, correlationId) = DadosValidos();
+        var (guidUsuario, nome, email, _, guidCampanha, titulo, valor, correlationId, status) = DadosValidos();
 
         // Act
-        var act = () => new Doacao(guidUsuario, nome, email, null!, guidCampanha, titulo, valor, correlationId);
+        var act = () => new Doacao(guidUsuario, nome, email, null!, guidCampanha, titulo, valor, correlationId, status);
 
         // Assert
         act.Should().Throw<DomainException>()
@@ -127,10 +130,10 @@ public class DoacaoTests
     public void Construtor_ComValorDoacaoMenorOuIgualAZero_DeveLancarDomainException(decimal valorInvalido)
     {
         // Arrange
-        var (guidUsuario, nome, email, cpf, guidCampanha, titulo, _, correlationId) = DadosValidos();
+        var (guidUsuario, nome, email, cpf, guidCampanha, titulo, _, correlationId, status) = DadosValidos();
 
         // Act
-        var act = () => new Doacao(guidUsuario, nome, email, cpf, guidCampanha, titulo, valorInvalido, correlationId);
+        var act = () => new Doacao(guidUsuario, nome, email, cpf, guidCampanha, titulo, valorInvalido, correlationId, status);
 
         // Assert
         // Nota: a entidade reutiliza (por engano, aparentemente um copy-paste no codigo
@@ -144,10 +147,10 @@ public class DoacaoTests
     public void Construtor_ComTituloNulo_DeveLancarNullReferenceException()
     {
         // Arrange
-        var (guidUsuario, nome, email, cpf, guidCampanha, _, valor, correlationId) = DadosValidos();
+        var (guidUsuario, nome, email, cpf, guidCampanha, _, valor, correlationId, status) = DadosValidos();
 
         // Act
-        var act = () => new Doacao(guidUsuario, nome, email, cpf, guidCampanha, null!, valor, correlationId);
+        var act = () => new Doacao(guidUsuario, nome, email, cpf, guidCampanha, null!, valor, correlationId, status);
 
         // Assert
         // Nota: TituloAssertions acessa "titulo.Valor" sem checar nulidade antes,
@@ -162,10 +165,10 @@ public class DoacaoTests
     public void Construtor_ComValorDoacaoPositivo_DeveCriarComSucesso()
     {
         // Arrange
-        var (guidUsuario, nome, email, cpf, guidCampanha, titulo, _, correlationId) = DadosValidos();
+        var (guidUsuario, nome, email, cpf, guidCampanha, titulo, _, correlationId, status) = DadosValidos();
 
         // Act
-        var doacao = new Doacao(guidUsuario, nome, email, cpf, guidCampanha, titulo, 0.01m, correlationId);
+        var doacao = new Doacao(guidUsuario, nome, email, cpf, guidCampanha, titulo, 0.01m, correlationId, status);
 
         // Assert
         doacao.ValorDoacao.Should().Be(0.01m);

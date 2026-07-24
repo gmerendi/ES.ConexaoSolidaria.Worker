@@ -51,6 +51,7 @@ public class DonationCreatedEventConsumerTests
             tituloCampanha: "Campanha de inverno solidario",
             cpf: "cpf-criptografado-base64",
             valor: valor,
+            status: DoacaoStatus.APROVADA.ToString(),
             correlationId: correlationId);
     }
 
@@ -114,7 +115,7 @@ public class DonationCreatedEventConsumerTests
 
         _messageServiceMock.Verify(m => m.SendDonationProcessedEventMessage(
             evento.guidUser, evento.nome, evento.email, evento.guidCampanha,
-            evento.tituloCampanha, evento.valor, evento.correlationId!, It.IsAny<CancellationToken>()),
+            evento.tituloCampanha, evento.valor, It.IsAny<string>(), evento.correlationId!, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -155,7 +156,7 @@ public class DonationCreatedEventConsumerTests
     // Campanha inexistente
     // -----------------------------------------------------------------------------
     [Fact]
-    public async Task Consume_QuandoCampanhaNaoExiste_DeveLancarApplicationExceptionENaoIniciarTransacao()
+    public async Task Consume_QuandoCampanhaNaoExiste_DevePublicarEventoRecusadoSemIniciarTransacao()
     {
         // Arrange
         var evento = CriarEventoValido();
@@ -165,25 +166,32 @@ public class DonationCreatedEventConsumerTests
             .Setup(r => r.ObterPorGuidAsync(evento.guidCampanha, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Campanha?)null);
 
+        _messageServiceMock
+            .Setup(m => m.SendDonationProcessedEventMessage(
+                It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Guid>(),
+                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
         var consumer = CriarConsumer();
 
-        // Act
+        // Act: campanha inexistente agora e' um desfecho de negocio (doacao
+        // recusada), nao um erro de processamento -- por isso nao lanca mais excecao.
         var act = async () => await consumer.Consume(contextMock.Object);
 
         // Assert
-        var assertion = await act.Should().ThrowAsync<ApplicationException>();
-        assertion.Which.Message.Should().Contain(evento.guidCampanha.ToString());
+        await act.Should().NotThrowAsync();
+
+        _messageServiceMock.Verify(m => m.SendDonationProcessedEventMessage(
+            evento.guidUser, evento.nome, evento.email, evento.guidCampanha, evento.tituloCampanha,
+            evento.valor, DoacaoStatus.RECUSADA.ToString(), evento.correlationId, It.IsAny<CancellationToken>()),
+            Times.Once);
 
         _unitOfWorkMock.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         _doacaoRepositoryMock.Verify(r => r.CadastrarAsync(It.IsAny<Doacao>(), It.IsAny<CancellationToken>()), Times.Never);
-        _messageServiceMock.Verify(m => m.SendDonationProcessedEventMessage(
-            It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Guid>(),
-            It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
-            Times.Never);
     }
 
     [Fact]
-    public async Task Consume_QuandoCampanhaNaoExiste_DeveLogarErroERelancarExcecao()
+    public async Task Consume_QuandoCampanhaNaoExiste_NaoDeveLogarComoErro()
     {
         // Arrange
         var evento = CriarEventoValido();
@@ -193,16 +201,27 @@ public class DonationCreatedEventConsumerTests
             .Setup(r => r.ObterPorGuidAsync(evento.guidCampanha, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Campanha?)null);
 
+        _messageServiceMock
+            .Setup(m => m.SendDonationProcessedEventMessage(
+                It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Guid>(),
+                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
         var consumer = CriarConsumer();
 
-        // Act
-        var act = async () => await consumer.Consume(contextMock.Object);
-        await act.Should().ThrowAsync<ApplicationException>();
+        // Act: campanha inexistente agora e' um desfecho de negocio esperado
+        // (doacao recusada), nao mais um erro de processamento.
+        await consumer.Consume(contextMock.Object);
 
-        // Assert
+        // Assert: por isso NAO deve acionar o path de LogError (overload de excecao).
         _loggerMock.Verify(l => l.LogError(
-            It.IsAny<string>(),
-            BaseLogType.EVENT, It.IsAny<Exception>(), It.IsAny<object?>(), evento.correlationId), Times.Once);
+            It.IsAny<string>(), BaseLogType.EVENT, It.IsAny<Exception>(), It.IsAny<object?>(), It.IsAny<string?>()),
+            Times.Never);
+
+        _loggerMock.Verify(l => l.LogInformation(
+            It.Is<string>(msg => msg.Contains("Campanha nao existe")),
+            BaseLogType.EVENT, It.IsAny<object>(), null),
+            Times.Once);
     }
 
     // -----------------------------------------------------------------------------
@@ -212,7 +231,7 @@ public class DonationCreatedEventConsumerTests
     [InlineData(0)]
     [InlineData(-1)]
     [InlineData(-100.50)]
-    public async Task Consume_ComValorMenorOuIgualAZero_DeveLancarApplicationException(decimal valorInvalido)
+    public async Task Consume_ComValorMenorOuIgualAZero_DevePublicarEventoRecusadoSemLancarExcecao(decimal valorInvalido)
     {
         // Arrange
         var campanha = TestData.CriarCampanhaValida();
@@ -223,14 +242,25 @@ public class DonationCreatedEventConsumerTests
             .Setup(r => r.ObterPorGuidAsync(evento.guidCampanha, It.IsAny<CancellationToken>()))
             .ReturnsAsync(campanha);
 
+        _messageServiceMock
+            .Setup(m => m.SendDonationProcessedEventMessage(
+                It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Guid>(),
+                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
         var consumer = CriarConsumer();
 
-        // Act
+        // Act: valor invalido agora e' um desfecho de negocio (doacao recusada),
+        // nao um erro de processamento -- por isso nao lanca mais excecao.
         var act = async () => await consumer.Consume(contextMock.Object);
 
         // Assert
-        await act.Should().ThrowAsync<ApplicationException>()
-            .WithMessage("*maior que 0*");
+        await act.Should().NotThrowAsync();
+
+        _messageServiceMock.Verify(m => m.SendDonationProcessedEventMessage(
+            evento.guidUser, evento.nome, evento.email, evento.guidCampanha, evento.tituloCampanha,
+            evento.valor, DoacaoStatus.RECUSADA.ToString(), evento.correlationId, It.IsAny<CancellationToken>()),
+            Times.Once);
 
         _doacaoRepositoryMock.Verify(r => r.ObterPorCorrelationIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         _unitOfWorkMock.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -249,7 +279,7 @@ public class DonationCreatedEventConsumerTests
 
         var doacaoExistente = new Doacao(
             Guid.NewGuid(), "Maria Existente", TestData.CriarEmailValido(), TestData.CriarCpfValido(),
-            campanha.Guid, TestData.CriarTituloValido(), 50m, evento.correlationId!);
+            campanha.Guid, TestData.CriarTituloValido(), 50m, evento.correlationId!, DoacaoStatus.PROCESSANDO);
 
         _campanhaRepositoryMock
             .Setup(r => r.ObterPorGuidAsync(evento.guidCampanha, It.IsAny<CancellationToken>()))
@@ -273,7 +303,7 @@ public class DonationCreatedEventConsumerTests
         _unitOfWorkMock.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         _messageServiceMock.Verify(m => m.SendDonationProcessedEventMessage(
             It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Guid>(),
-            It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -314,7 +344,7 @@ public class DonationCreatedEventConsumerTests
         _unitOfWorkMock.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
         _messageServiceMock.Verify(m => m.SendDonationProcessedEventMessage(
             It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Guid>(),
-            It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -374,7 +404,7 @@ public class DonationCreatedEventConsumerTests
         _messageServiceMock
             .Setup(m => m.SendDonationProcessedEventMessage(
                 It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Guid>(),
-                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(excecaoOriginal);
 
         var consumer = CriarConsumer();
@@ -401,7 +431,8 @@ public class DonationCreatedEventConsumerTests
         var evento = new DonationCreatedEvent(
             guidUser: Guid.NewGuid(), nome: "Joao da Silva", email: "email-invalido-sem-arroba",
             guidCampanha: campanha.Guid, tituloCampanha: "Campanha valida",
-            cpf: "cpf-criptografado", valor: 100m, correlationId: Guid.NewGuid().ToString());
+            cpf: "cpf-criptografado", valor: 100m, status: DoacaoStatus.APROVADA.ToString(), 
+            correlationId: Guid.NewGuid().ToString());
         var contextMock = CriarContextoMock(evento);
 
         _campanhaRepositoryMock
@@ -484,6 +515,6 @@ public class DonationCreatedEventConsumerTests
         _unitOfWorkMock.Verify(u => u.CommitAsync(token), Times.Once);
         _messageServiceMock.Verify(m => m.SendDonationProcessedEventMessage(
             It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Guid>(),
-            It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), token), Times.Once);
+            It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(), token), Times.Once);
     }
 }

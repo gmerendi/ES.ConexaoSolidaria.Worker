@@ -93,27 +93,6 @@ public class DonationCreatedEventConsumer : IConsumer<DonationCreatedEvent>
                 return;
             }
 
-            // 3. Checa o status da doacao. (Simulação)
-            // Caso o status seja diferente de aprovado, não salva no banco e publica na fila de processada
-            // porém com status de recusada. 
-            //if (donationEvent.status != DoacaoStatus.APROVADA.ToString())
-            //{
-            //    _logger.LogInformation("Status da campanha: {guidCampanha} deve ser aprovada", BaseLogType.EVENT, donationEvent.guidCampanha);
-            //    await _messageService.SendDonationProcessedEventMessage(
-            //        donationEvent.guidUser,
-            //        donationEvent.nome,
-            //        donationEvent.email,
-            //        donationEvent.guidCampanha,
-            //        donationEvent.tituloCampanha,
-            //        donationEvent.valor,
-            //        DoacaoStatus.RECUSADA.ToString(),
-            //        donationEvent.correlationId,
-            //        context.CancellationToken
-            //    );
-            //    _logger.LogInformation("Evento publicado: DonationProcessedEvent. Doacao recusada - status recusada", BaseLogType.EVENT, donationEvent, donationEvent.correlationId);
-            //    return;
-            //}
-
             // 4. Checa se a doacao ja nao foi processada
             // Idempotencia. Se o worker cair e o rabbit reenviar a  mensagem, verifica se nao foi processada
             // Ou teriamos o valor duplicado
@@ -151,7 +130,6 @@ public class DonationCreatedEventConsumer : IConsumer<DonationCreatedEvent>
                 if (donationEvent.status == DoacaoStatus.APROVADA.ToString())
                 {
                     await _campanhaRepository.ObterEAlterarAsync(campanha, donationEvent.valor);
-                    _logger.LogInformation("Evento publicado: DonationProcessedEvent. Doacao recusada - status recusada", BaseLogType.EVENT, donationEvent, donationEvent.correlationId);
                 }
                 
                 await _unitOfWork.CommitAsync(context.CancellationToken);
@@ -176,7 +154,7 @@ public class DonationCreatedEventConsumer : IConsumer<DonationCreatedEvent>
                 );
 
             // ── Métrica de negócio ─────────────────────────────────────────
-            if (donationEvent.status != DoacaoStatus.APROVADA.ToString())
+            if (donationEvent.status == DoacaoStatus.APROVADA.ToString())
             {
                 _metrics.IncrementarDoacao();
             }

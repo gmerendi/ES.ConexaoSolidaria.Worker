@@ -1,4 +1,5 @@
-﻿using DonationWorker.Domain.Shared.Entity;
+﻿using DonationWorker.Domain.Enums;
+using DonationWorker.Domain.Shared.Entity;
 using DonationWorker.Domain.Shared.Helpers;
 using DonationWorker.Domain.ValueObjects;
 using System.Diagnostics.CodeAnalysis;
@@ -15,12 +16,14 @@ public sealed class Doacao : EntityBase
     public TituloCampanha TituloCampanha { get; private set; }
     public decimal ValorDoacao { get; private set; }
     public string CorrelationId { get; private set; }
+    public DoacaoStatus StatusDoacao { get; private set; }
 
     private Doacao() { }
 
     [SetsRequiredMembers]
     public Doacao(Guid guidUsuario, string nomeUsuario, Email emailUsuario, Cpf cpfUsuario,
-        Guid guidCampanha, TituloCampanha tituloCampanha, decimal valorDoacao, string correlationId)
+        Guid guidCampanha, TituloCampanha tituloCampanha, decimal valorDoacao, string correlationId,
+        DoacaoStatus statusDoacao)
     {
         NomeAssertions(nomeUsuario);
         EmailAssertions(emailUsuario);
@@ -38,6 +41,7 @@ public sealed class Doacao : EntityBase
         ValorDoacao = valorDoacao;
         CriadoPor = "Worker";
         CorrelationId = correlationId;
+        StatusDoacao = statusDoacao;
     }
 
 

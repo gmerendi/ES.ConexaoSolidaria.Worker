@@ -53,6 +53,13 @@ public sealed class DoacaoConfiguration : IEntityTypeConfiguration<Doacao>
                .HasMaxLength(30)
                .HasColumnType("varchar(30)");
 
+        builder.Property(u => u.StatusDoacao)
+               .HasColumnName("status_doacao")
+               .IsRequired()
+               .HasConversion<string>()
+               .HasMaxLength(30)
+               .HasColumnType("varchar(30)");
+
 
         // Propriedades de Auditoria
         builder.Property(u => u.CriadoPor)

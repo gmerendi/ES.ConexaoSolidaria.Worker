@@ -37,16 +37,16 @@ namespace DonationWorker.Infrastructure.Services.Messaging
 
 
 
-        public async Task SendDonationProcessedEventMessage(Guid guidUser, string nome, string email, Guid guidCampanha, string tituloCampanha, decimal valor, string correlationId, CancellationToken ct)
+        public async Task SendDonationProcessedEventMessage(Guid guidUser, string nome, string email, Guid guidCampanha, string tituloCampanha, decimal valor, string status, string correlationId, CancellationToken ct)
         {
 
             if (_applicationType == "LOCAL")
             {
-                await SendDonationProcessedEventMessageRabbit(guidUser, nome, email, guidCampanha, tituloCampanha, valor, correlationId, ct);
+                await SendDonationProcessedEventMessageRabbit(guidUser, nome, email, guidCampanha, tituloCampanha, valor, status, correlationId, ct);
             }
             else if (_applicationType == "LAB")
             {
-                await SendDonationProcessedEventMessageSQS(guidUser, nome, email, guidCampanha, tituloCampanha, valor, correlationId, ct);
+                await SendDonationProcessedEventMessageSQS(guidUser, nome, email, guidCampanha, tituloCampanha, valor, status, correlationId, ct);
             }
 
         }
@@ -57,12 +57,12 @@ namespace DonationWorker.Infrastructure.Services.Messaging
         // -----------------------------------------------------------------------------
         // Privados
         // -----------------------------------------------------------------------------
-        private async Task SendDonationProcessedEventMessageRabbit(Guid guidUser, string nome, string email, Guid guidCampanha, string tituloCampanha, decimal valor, string correlationId, CancellationToken ct)
+        private async Task SendDonationProcessedEventMessageRabbit(Guid guidUser, string nome, string email, Guid guidCampanha, string tituloCampanha, decimal valor, string status, string correlationId, CancellationToken ct)
         {
 
             try
             {
-                var eventMessage = new DonationProcessedEvent(guidUser, nome, email, guidCampanha, tituloCampanha, valor, (correlationId ?? _correlationIdGenerator.Get()));
+                var eventMessage = new DonationProcessedEvent(guidUser, nome, email, guidCampanha, tituloCampanha, valor, status, (correlationId ?? _correlationIdGenerator.Get()));
                 await _publish.Publish(eventMessage, ct);
                 _logger.LogInformation("Evento DonationProcessedEvent publicado para o Broker. Usuario: {Email} | Campanha: {GuidCampanha}", BaseLogType.EVENT, new { Email = email, GuidCampanha = guidCampanha });
             }
@@ -78,7 +78,7 @@ namespace DonationWorker.Infrastructure.Services.Messaging
 
 
 
-        private async Task SendDonationProcessedEventMessageSQS(Guid guidUser, string nome, string email, Guid guidCampanha, string tituloCampanha, decimal valor, string correlationId, CancellationToken ct)
+        private async Task SendDonationProcessedEventMessageSQS(Guid guidUser, string nome, string email, Guid guidCampanha, string tituloCampanha, decimal valor, string status, string correlationId, CancellationToken ct)
         {
             _logger.LogInformation("Evento DonationProcessedEvent iniciado para a fila: {Fila}", BaseLogType.EVENT, new { Fila = _donationProcessedQueueUrl });
             var message = new
@@ -89,6 +89,7 @@ namespace DonationWorker.Infrastructure.Services.Messaging
                 guidCampanha = guidCampanha.ToString(),
                 tituloCampanha = tituloCampanha,
                 valor = valor,
+                status = status,
                 correlationId = _correlationIdGenerator.Get()
             };
 
